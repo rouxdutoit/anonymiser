@@ -34,6 +34,38 @@ If your computer is older or has less RAM, message me first — there's an easie
 
 ---
 
+## Progress checklist
+
+Use this to keep track of where you are. Each box matches a numbered step further down.
+
+> **Tip — make these clickable for yourself.** If you want to tick the boxes as you go, click the **Fork** button at the top right of this GitHub page first (it makes a personal copy of the repo on your account). Then on your fork, the checkboxes below become interactive. Otherwise the boxes are a visual reference only — feel free to print this page and tick with a pen.
+
+**Part 1 — Convert your bank PDF to a CSV**
+- [ ] **1.** Download LM Studio
+- [ ] **2.** Open LM Studio for the first time
+- [ ] **3.** Search for the model you'll use
+- [ ] **4.** Download the model (coffee break)
+- [ ] **5.** Open the Chat tab and load the model
+- [ ] **6.** Attach your bank statement PDF
+- [ ] **7.** Paste the extraction prompt
+- [ ] **8.** Wait for the model and spot-check the result
+- [ ] **9.** Save the CSV to your Desktop *(repeat for credit card if applicable)*
+
+**Part 2 — Run the anonymiser script**
+- [ ] **10.** Open Terminal
+- [ ] **11.** Install bun
+- [ ] **12.** Close Terminal and open a fresh one
+- [ ] **13.** Download the anonymiser script
+- [ ] **14.** Install the script's dependencies
+- [ ] **15.** Move your CSV(s) into the anonymiser folder
+- [ ] **16.** Run the anonymiser
+
+**Part 3 — Verify and send**
+- [ ] **17.** Open `sanitised.json` and check it by eye
+- [ ] **18.** Send `sanitised.json` to Roux
+
+---
+
 ## Part 1 — Convert your bank PDF to a CSV (steps 1–9)
 
 A CSV is just a plain-text spreadsheet with a row per transaction (date, what it was, how much). It's the format the next part of the script understands. We use a small AI model running on your computer to read your bank PDF and write the CSV.
