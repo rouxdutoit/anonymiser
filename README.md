@@ -187,13 +187,21 @@ Total turnaround: usually within 24 hours of receiving your sanitised JSON.
 **"Am I sure my data is safe at every step?"**
 Steps 2 and 3 never leave your machine until you actively send the JSON. Step 1 (Path B) does upload the PDF to Claude — that's a one-time exposure to Anthropic on your account, your call. Path A skips that entirely. The public anonymiser repo at github.com/rouxdutoit/anonymiser lets you (or anyone you trust to read the code) verify exactly what gets stripped.
 
-**"What if my bank's CSV has different columns?"**
-Open the CSV in a text editor and rename the header row. The script accepts:
-- date columns named `date`, `datum`
-- description columns named `description`, `memo`, `verwendungszweck`
-- amount columns named `amount`, `betrag`
-- (optional) type columns named `type`, `art`
-Other columns are ignored.
+**"What if my bank's CSV has different columns, or the columns are in a different order?"**
+
+Order doesn't matter — the script looks columns up by header name, not position. Extra columns (Balance, Reference Number, etc.) are ignored.
+
+The script auto-detects a wide set of common header names (case-insensitive, parens like `Amount (ZAR)` are handled):
+
+- **Date:** `date`, `datum`, `buchungsdatum`, `transaction date`, `trans date`, `posted date`, `value date`, `wertstellung`
+- **Description:** `description`, `memo`, `verwendungszweck`, `details`, `reference`, `narration`, `particulars`, `transaction details`, `narrative`
+- **Amount (single signed column):** `amount`, `betrag`, `amount eur/zar/usd`, `value`, `transaction amount`
+- **OR split debit/credit columns:** `debit`/`credit`, `soll`/`haben`, `money in`/`money out`, `withdrawal`/`deposit` — the script combines them automatically (credit = positive inflow, debit = negative outflow)
+- **(optional) Type:** `type`, `art`, `transaction type`, `dr/cr`
+
+If your CSV uses something not in those lists, the script will print a clear error showing **which headers it found** and **all the names it recognises**. Fix by either:
+- Opening the CSV in a text editor and renaming the header row to one of the recognised names (e.g. `Trans Date` → `date`), or
+- Telling Roux your bank's format so we can add it to the alias list.
 
 **"My amounts are like '1 234,56' (German style) or have a currency symbol — will it work?"**
 The script handles both `1234.56` and `1.234,56`. Strip any currency symbols (€, R, $) from the amount column with find-and-replace before running, just in case.

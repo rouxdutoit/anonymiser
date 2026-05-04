@@ -136,31 +136,100 @@ interface ParsedCsv {
   rows: { date: Date; description: string; amount: number; type: "inflow" | "outflow" }[];
 }
 
+/**
+ * Header aliases. Headers are first normalised (lowercased, parens
+ * stripped, whitespace collapsed) so e.g. "Amount (ZAR)" → "amount" and
+ * "Transaction Date" → "transaction date".
+ */
+const HEADER_ALIASES = {
+  date: [
+    "date", "datum", "buchungsdatum", "transaction date", "trans date",
+    "posted date", "post date", "value date", "wertstellung", "valutadatum",
+    "transactiondate",
+  ],
+  description: [
+    "description", "memo", "verwendungszweck", "details", "reference",
+    "narration", "particulars", "transaction", "beschreibung", "narrative",
+    "transaction details", "memo / description",
+  ],
+  amount: [
+    "amount", "betrag", "amount eur", "amount zar", "amount usd",
+    "amount gbp", "value", "transaction amount", "amount in account currency",
+  ],
+  debit: ["debit", "soll", "debit amount", "money out", "withdrawal", "withdrawals"],
+  credit: ["credit", "haben", "credit amount", "money in", "deposit", "deposits"],
+  type: ["type", "art", "transaction type", "dr/cr", "kind"],
+};
+
+/** Normalise a header for matching: lowercase, drop parens content, trim. */
+function normaliseHeader(h: string): string {
+  return h
+    .toLowerCase()
+    .replace(/\(.*?\)/g, " ")    // "Amount (ZAR)" → "amount  "
+    .replace(/[€$£¥]/g, " ")     // strip currency symbols
+    .replace(/[_\-/]/g, " ")     // separators → space
+    .replace(/\s+/g, " ")        // collapse whitespace
+    .trim();
+}
+
+function findHeader(normalised: string[], aliases: string[]): number {
+  return normalised.findIndex((h) => aliases.includes(h));
+}
+
 function readCsv(path: string): ParsedCsv {
   const raw = readFileSync(resolve(path), "utf8");
   const lines = raw.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) throw new Error(`CSV has no data rows: ${path}`);
-  const headers = splitCsvRow(lines[0]).map((h) => h.toLowerCase());
-  const dateIdx = headers.findIndex((h) => h === "date" || h === "datum");
-  const descIdx = headers.findIndex((h) => h === "description" || h === "memo" || h === "verwendungszweck");
-  const amtIdx = headers.findIndex((h) => h === "amount" || h === "betrag");
-  const typeIdx = headers.findIndex((h) => h === "type" || h === "art");
-  if (dateIdx < 0 || descIdx < 0 || amtIdx < 0) {
+  const rawHeaders = splitCsvRow(lines[0]);
+  const headers = rawHeaders.map(normaliseHeader);
+
+  const dateIdx = findHeader(headers, HEADER_ALIASES.date);
+  const descIdx = findHeader(headers, HEADER_ALIASES.description);
+  const amtIdx = findHeader(headers, HEADER_ALIASES.amount);
+  const debitIdx = findHeader(headers, HEADER_ALIASES.debit);
+  const creditIdx = findHeader(headers, HEADER_ALIASES.credit);
+  const typeIdx = findHeader(headers, HEADER_ALIASES.type);
+
+  // Validate: need date, description, and either amount OR (debit AND credit).
+  const haveSplitDC = debitIdx >= 0 && creditIdx >= 0;
+  const haveAmount = amtIdx >= 0;
+  if (dateIdx < 0 || descIdx < 0 || (!haveAmount && !haveSplitDC)) {
+    const missing: string[] = [];
+    if (dateIdx < 0) missing.push("date");
+    if (descIdx < 0) missing.push("description");
+    if (!haveAmount && !haveSplitDC)
+      missing.push("amount (or debit+credit pair)");
     throw new Error(
-      `CSV headers must include "date", "description", "amount" (got: ${headers.join(", ")})`,
+      `Could not auto-detect column(s): ${missing.join(", ")}.\n` +
+        `   Detected headers: ${rawHeaders.map((h) => `"${h}"`).join(", ")}\n` +
+        `   Recognised aliases: ${JSON.stringify(HEADER_ALIASES, null, 2)}\n` +
+        `   Fix: rename your CSV's header row to use one of the recognised\n` +
+        `   names (e.g. rename "Trans Date" to "date"), or open an issue\n` +
+        `   at github.com/rouxdutoit/anonymiser with your bank's format.`,
     );
   }
+
   const rows: ParsedCsv["rows"] = [];
   for (let i = 1; i < lines.length; i++) {
     const cells = splitCsvRow(lines[i]);
     try {
-      const amount = parseAmount(cells[amtIdx]);
+      let amount: number;
+      if (haveAmount) {
+        amount = parseAmount(cells[amtIdx]);
+      } else {
+        // Split debit/credit columns: typically one of the two is empty per row.
+        const debit = cells[debitIdx] ? parseAmount(cells[debitIdx]) : 0;
+        const credit = cells[creditIdx] ? parseAmount(cells[creditIdx]) : 0;
+        // Convention: credit is positive (inflow), debit is negative (outflow).
+        // If a bank publishes both as positive numbers, signs are derived here.
+        amount = Math.abs(credit) - Math.abs(debit);
+      }
       const explicitType =
         typeIdx >= 0 ? cells[typeIdx].toLowerCase().trim() : "";
       const type: "inflow" | "outflow" =
-        explicitType === "inflow" || explicitType === "credit" || explicitType === "haben"
+        explicitType === "inflow" || explicitType === "credit" || explicitType === "haben" || explicitType === "cr"
           ? "inflow"
-          : explicitType === "outflow" || explicitType === "debit" || explicitType === "soll"
+          : explicitType === "outflow" || explicitType === "debit" || explicitType === "soll" || explicitType === "dr"
             ? "outflow"
             : amount >= 0
               ? "inflow"
