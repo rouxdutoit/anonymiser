@@ -1,14 +1,11 @@
 {
   "name": "anonymiser",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Browser-side anonymisation rules and CLI for the rouxdutoit.com Operative Diagnose. Deterministic, auditable, no LLMs.",
   "main": "anonymise.ts",
   "scripts": {
     "anonymise": "bun anonymise.ts"
-  },
-  "dependencies": {
-    "pdfjs-dist": "^5.7.0"
   }
 }
