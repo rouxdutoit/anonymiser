@@ -108,37 +108,62 @@ This step **never sends anything anywhere**. The script reads the CSV, applies t
 
 ### One-time setup (90 seconds)
 
-Open Terminal (macOS: ⌘+Space, type "Terminal", Enter). Paste:
+Open Terminal (macOS: ⌘+Space, type "Terminal", Enter). Then run these commands one block at a time — paste each block, press Enter, wait for it to finish.
 
-```bash
-# Install bun (a JavaScript runtime — required to run the script)
+**1) Install `bun`** — a small, fast JavaScript runtime needed to run the script (like `node` but simpler):
+
+```
 curl -fsSL https://bun.sh/install | bash
+```
 
-# Clone the anonymiser repo
+When that finishes, close the Terminal window and open a fresh one. (This is so `bun` becomes available on your shell's path.)
+
+**2) Clone the public anonymiser repo into your home folder:**
+
+```
 git clone https://github.com/rouxdutoit/anonymiser.git ~/anonymiser
+```
+
+**3) Move into the new folder and install its dependencies:**
+
+```
 cd ~/anonymiser
 bun install
 ```
 
-What that does: installs `bun` (a small, fast tool to run the script — like `node` but simpler), pulls down the public anonymiser repo to `~/anonymiser`, and installs its dependencies. None of this touches your bank data.
-
-You only do this once. Future runs are just the next command.
+None of this touches your bank data — it's just installing the script and its tools. You only do this once. Future runs are just the next command.
 
 ### Run it
 
-Move your CSV(s) into the anonymiser folder for convenience, then run:
+Move your CSV file into the anonymiser folder (assumes you saved it to your Desktop):
 
-```bash
+```
 cp ~/Desktop/bank.csv ~/anonymiser/bank.csv
-# Optional, only if you have a credit card CSV:
+```
+
+If you also made a credit-card CSV, move that one too (skip this command if you don't have one):
+
+```
 cp ~/Desktop/cc.csv ~/anonymiser/cc.csv
+```
 
+Change to the anonymiser folder:
+
+```
 cd ~/anonymiser
+```
 
-# Bank statement only:
+Now run the anonymiser. Pick **one** of these two — bank-only, or bank-plus-credit-card.
+
+**Bank statement only:**
+
+```
 bun anonymise.ts bank.csv --currency ZAR --hint "B2B widgets, ~5M ZAR rev, 12 staff" -o sanitised.json
+```
 
-# Or with credit card too:
+**Bank statement and credit card together:**
+
+```
 bun anonymise.ts bank.csv --cc cc.csv --currency ZAR --hint "B2B widgets, ~5M ZAR rev, 12 staff" -o sanitised.json
 ```
 
