@@ -57,34 +57,6 @@ This route involves installing two pieces of software (LM Studio and `bun`). If 
 - **Disk:** ~6 GB free (5 GB for the language model, the rest for the script).
 - **OS:** macOS, Windows, or Linux. Apple Silicon Macs are particularly fast at this.
 
-### Progress checklist
-
-> **Tip:** click the **Fork** button at the top right of this GitHub page first to make these checkboxes interactive on your own copy.
-
-**Part 1 — Convert your PDF to a CSV using LM Studio**
-- [ ] **1.** Download LM Studio
-- [ ] **2.** Open LM Studio for the first time
-- [ ] **3.** Search for the model
-- [ ] **4.** Download the model (coffee break)
-- [ ] **5.** Load the model
-- [ ] **6.** Attach your bank statement PDF
-- [ ] **7.** Paste the extraction prompt
-- [ ] **8.** Spot-check the result
-- [ ] **9.** Save the CSV to your Desktop *(repeat for credit card if applicable)*
-
-**Part 2 — Run the anonymiser script locally**
-- [ ] **10.** Open Terminal
-- [ ] **11.** Install bun
-- [ ] **12.** Close Terminal and open a fresh one
-- [ ] **13.** Clone this repo
-- [ ] **14.** Install dependencies
-- [ ] **15.** Move your CSV into the folder
-- [ ] **16.** Run the anonymiser
-
-**Part 3 — Verify and send**
-- [ ] **17.** Open `sanitised.json` and check it
-- [ ] **18.** Send `sanitised.json` to Roux
-
 ### Part 1 — Convert your bank PDF to a CSV using LM Studio
 
 #### 1. Download LM Studio (~3 minutes)
