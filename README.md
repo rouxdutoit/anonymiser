@@ -1,6 +1,6 @@
 # Anonymising your bank data — a step-by-step guide
 
-This guide walks you through anonymising your bank and credit card data on **your own laptop**, before you send anything to me. Total time: ~10 minutes. Total tools: a web browser, a free Claude account, and one terminal command. No software install beyond `bun` (one-line setup).
+This guide walks you through anonymising your bank and credit card data on **your own computer**, before you send anything to me. Total time: ~10 minutes. Total tools: a web browser, a free Claude account, and one terminal command. No software install beyond `bun` (one-line setup).
 
 The script you'll run is **public and auditable**: [github.com/rouxdutoit/anonymiser](https://github.com/rouxdutoit/anonymiser). Anyone can read the rules and verify they do what they claim.
 
@@ -13,7 +13,7 @@ You'll do three things:
 | # | What | Why |
 |---|---|---|
 | 1 | Get your transactions out of the bank PDF as a CSV | The bank PDF format isn't standard; once it's a CSV (date, description, amount), the anonymiser script can process it deterministically. |
-| 2 | Run the anonymiser script on the CSV on your laptop | It strips names, account numbers, and exact amounts. You keep the original CSV; you only send the *anonymised* output. |
+| 2 | Run the anonymiser script on the CSV on your computer | It strips names, account numbers, and exact amounts. You keep the original CSV; you only send the *anonymised* output. |
 | 3 | Send the anonymised JSON to Roux | Reviewable plain text. You can read every byte before sending. Nothing about you, your customers, or your suppliers is identifiable in it. |
 
 ---
@@ -63,7 +63,7 @@ If you have a credit card you want included, repeat for `cc.csv`. Same column fo
 
 ---
 
-## Step 2 — Run the anonymiser on your laptop
+## Step 2 — Run the anonymiser on your computer
 
 This step **never sends anything anywhere**. The script reads the CSV, applies the anonymisation rules, and writes the result to a new file. You then read that file to confirm it's clean before sending.
 
