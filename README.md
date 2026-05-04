@@ -57,6 +57,45 @@ If your bank only gives PDFs:
 
 **Why this is safe-ish:** Claude does see your raw bank statement in this step. That's a one-time exposure to Anthropic on your account, your decision. The next steps anonymise *before* anything reaches Roux. If you'd rather not send the PDF to Claude, use Path A instead, or transcribe the rows manually.
 
+### Path C — Use a local LLM that never sees the internet (most private)
+
+If you'd rather no third party (not even Anthropic for one minute) see your bank statement, run a small open-weights vision model on your own computer. The model reads the PDF, extracts the CSV, then you delete the model afterwards if you want. Nothing about your finances touches a server.
+
+System requirements: roughly **16 GB of RAM** and **5–10 GB of free disk** for the model weights. Apple Silicon Macs (M1/M2/M3/M4) and recent Windows/Linux machines with a decent GPU handle this comfortably. Older Intel Macs will struggle.
+
+**Recommended tool: LM Studio** — desktop app, drag-and-drop, no terminal needed.
+
+1. Go to [lmstudio.ai](https://lmstudio.ai) and download the installer for your OS. Install like any normal app.
+2. Open LM Studio. On first launch, click **Discover** (the magnifying-glass icon in the left sidebar).
+3. In the search box, type: **`Qwen2.5-VL-7B-Instruct`**. Pick the result tagged **`Q4_K_M`** or similar (around 5 GB download — a quantised version that runs well on consumer hardware). Click **Download**. Wait for it to finish (3–10 minutes depending on your internet).
+4. Switch to the **Chat** tab (speech-bubble icon, left sidebar). At the top, click **Select a model to load** and pick the Qwen model you just downloaded. Wait ~10 seconds for it to load into memory.
+5. In the chat input, click the **paperclip / attach** icon and select your bank statement PDF.
+6. Paste the same prompt from Path B:
+
+   ```
+   This is a bank statement. Extract every transaction as a CSV with exactly these columns:
+
+   date,description,amount
+
+   Rules:
+   - One row per transaction. Header row included.
+   - date: ISO format YYYY-MM-DD
+   - description: the full memo / Verwendungszweck, single line, no extra commas (replace any internal comma with a semicolon)
+   - amount: positive for money in (deposits, customer payments). Negative for money out (payments, fees, transfers out). Decimal with a period (e.g. 1234.56), no thousand separators.
+
+   Return only the CSV. No commentary, no markdown fences, no backticks.
+   ```
+
+7. Press send. The model will extract the transactions. This takes longer than Claude.ai (maybe 30–90 seconds for a 90-day statement) — local inference is slower than cloud, but it's *yours*.
+8. **Sanity-check the output more carefully than you would with Claude.** Open-weights vision models are good but not perfect. Spot-check a few rows against the PDF: dates align, amounts match, signs are right. If you see issues, ask the model to "redo the rows where dates are wrong" or similar.
+9. Copy the CSV text. Paste into a plain-text editor. Save as `bank.csv`. Continue to **Step 2**.
+
+Once done, you can quit LM Studio. To free disk space, you can delete the downloaded model from **My Models** if you don't expect to use it again.
+
+**Why this is the most private option:** the model runs entirely on your computer's RAM/GPU. LM Studio has no telemetry of your prompts. Your bank statement file never leaves the machine. Roux still only ever sees the sanitised JSON from Step 2.
+
+**Alternatives to LM Studio:** if you already use [Ollama](https://ollama.com) or [Open WebUI](https://openwebui.com), they work the same way — pull a vision model (`ollama pull qwen2.5vl:7b`) and prompt it identically. LM Studio is recommended only because it has the lowest setup friction for first-time users.
+
 ### Same again for your credit card statement (optional)
 
 If you have a credit card you want included, repeat for `cc.csv`. Same column format. The diagnostic gets sharper with more data; it works fine without it.
