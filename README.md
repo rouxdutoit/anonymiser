@@ -1,6 +1,6 @@
 # Anonymising your bank data — a step-by-step guide
 
-This guide walks you through anonymising your bank and credit card data on **your own computer**, before you send anything to me. Total time: ~10 minutes. Total tools: a web browser, a free Claude account, and one terminal command. No software install beyond `bun` (one-line setup).
+This guide walks you through anonymising your bank and credit card data on **your own computer**, before you send anything to me. Total time: ~10 minutes once you're set up. Tools needed depend on which path you pick — see Step 1 below.
 
 The script you'll run is **public and auditable**: [github.com/rouxdutoit/anonymiser](https://github.com/rouxdutoit/anonymiser). Anyone can read the rules and verify they do what they claim.
 
@@ -13,14 +13,20 @@ You'll do three things:
 | # | What | Why |
 |---|---|---|
 | 1 | Get your transactions out of the bank PDF as a CSV | The bank PDF format isn't standard; once it's a CSV (date, description, amount), the anonymiser script can process it deterministically. |
-| 2 | Run the anonymiser script on the CSV on your computer | It strips names, account numbers, and exact amounts. You keep the original CSV; you only send the *anonymised* output. |
+| 2 | Run the anonymiser script on the CSV on your computer | It strips names, account numbers, vendor names, and exact amounts. You keep the original CSV; you only send the *anonymised* output. |
 | 3 | Send the anonymised JSON to Roux | Reviewable plain text. You can read every byte before sending. Nothing about you, your customers, or your suppliers is identifiable in it. |
 
 ---
 
 ## Step 1 — Convert your bank PDF to a CSV
 
-You have two paths. Pick whichever your bank supports.
+You have **three paths**. Pick whichever fits your bank, your comfort level, and how private you want to be. They all produce the same output (a CSV) — Step 2 is identical regardless.
+
+| Path | When to pick it | What gets exposed |
+|---|---|---|
+| **A — Bank's CSV export** | Your bank has a "Download CSV" button (most modern banks do). | Nothing — file goes straight from bank to your computer. |
+| **B — Claude.ai (cloud)** | Your bank only gives PDFs and you have a Claude account. Easiest if you don't want to install anything. | Anthropic sees your raw bank PDF for ~30 seconds (your account, one-time). Roux still only sees the anonymised JSON from Step 2. |
+| **C — Local LLM (LM Studio)** | You want zero third-party exposure of the raw PDF. Worth it if your data is especially sensitive. | Nothing — model runs entirely on your computer. |
 
 ### Path A — your bank's "Export to CSV" button (easiest)
 
@@ -30,9 +36,9 @@ The file should have at least these columns: **date**, **description** (or "memo
 
 If your bank exports something with different column names, you can rename them in any text editor — the script accepts `date / description / amount` (also `datum / verwendungszweck / betrag`).
 
-### Path B — Use Claude to extract the transactions (if no CSV export)
+### Path B — Claude.ai (cloud, no install needed)
 
-If your bank only gives PDFs:
+If your bank only gives PDFs and you don't want to install anything:
 
 1. Go to [claude.ai](https://claude.ai) and sign in (free account works).
 2. Click the **paperclip / attach** icon in the chat input. Upload your bank statement PDF.
@@ -55,9 +61,9 @@ If your bank only gives PDFs:
 4. Claude will reply with a CSV block. **Select the entire CSV text and copy it.**
 5. Open a plain-text editor (TextEdit on Mac with Format → Make Plain Text, or VS Code, or even Notes saved as `.txt`). Paste. Save as `bank.csv` somewhere you'll remember (e.g. `~/Desktop/bank.csv`).
 
-**Why this is safe-ish:** Claude does see your raw bank statement in this step. That's a one-time exposure to Anthropic on your account, your decision. The next steps anonymise *before* anything reaches Roux. If you'd rather not send the PDF to Claude, use Path A instead, or transcribe the rows manually.
+**Privacy note:** Claude does see your raw bank statement in this step. That's a one-time exposure to Anthropic on your account, your decision. The next steps anonymise *before* anything reaches Roux. If you'd rather Anthropic not see the PDF either, use Path A or Path C below.
 
-### Path C — Use a local LLM that never sees the internet (most private)
+### Path C — Local LLM via LM Studio (most private, zero third-party exposure)
 
 If you'd rather no third party (not even Anthropic for one minute) see your bank statement, run a small open-weights vision model on your own computer. The model reads the PDF, extracts the CSV, then you delete the model afterwards if you want. Nothing about your finances touches a server.
 
@@ -96,9 +102,9 @@ Once done, you can quit LM Studio. To free disk space, you can delete the downlo
 
 **Alternatives to LM Studio:** if you already use [Ollama](https://ollama.com) or [Open WebUI](https://openwebui.com), they work the same way — pull a vision model (`ollama pull qwen2.5vl:7b`) and prompt it identically. LM Studio is recommended only because it has the lowest setup friction for first-time users.
 
-### Same again for your credit card statement (optional)
+### Optional: do the same for your credit card statement
 
-If you have a credit card you want included, repeat for `cc.csv`. Same column format. The diagnostic gets sharper with more data; it works fine without it.
+If you have a credit card you'd like included, repeat whichever path you used above for the credit-card statement and save it as `cc.csv`. Same column format. The diagnostic gets sharper with more data; it works fine without.
 
 ---
 
@@ -218,12 +224,14 @@ Open `~/anonymiser/sanitised.json` in any text editor. You should see something 
 
 Things you should **not** see anywhere in this file:
 - ❌ Your name, your customers' names, your suppliers' names
-- ❌ Your IBAN, account number, BIC, or any long number
+- ❌ Your IBAN, account number, BIC, or any 10-plus-digit numeric sequence
 - ❌ Any transaction memo text (e.g. "Invoice 2024-0042 from Müller GmbH")
-- ❌ Any exact euro/rand/dollar amount (everything should be a round number like 4200, 130000, 89)
-- ❌ Any specific date (only year + month buckets)
+- ❌ Any exact amount with a decimal point (everything should be round numbers like `4200`, `130000`, `89`)
+- ❌ Any specific day-level date (only `year` + `month` should appear)
 
-If you see any of those, **stop, don't send, message Roux first** — something didn't strip correctly and that's a bug worth fixing on this end.
+The one alphanumeric ID you *will* see — `analysisId` — is a random UUID generated on your computer at the moment the script ran. It identifies the analysis session, not you. Nothing in it is derived from your data.
+
+If you see anything else from the "should not see" list, **stop, don't send, message Roux first** — something didn't strip correctly and that's a bug worth fixing.
 
 ---
 
@@ -248,8 +256,13 @@ Total turnaround: usually within 24 hours of receiving your sanitised JSON.
 
 ## Frequently asked questions
 
+**"Which path should I pick?"**
+- If your online banking has an "Export CSV" / "Download CSV" button → **Path A**. Done in 30 seconds.
+- If only PDFs are available, and you have or don't mind a Claude account → **Path B**. ~2 minutes, but Anthropic sees the PDF briefly.
+- If your data is especially sensitive or you don't want any third party to see the raw statement → **Path C**. ~15 minutes the first time (model download), then a few minutes per run.
+
 **"Am I sure my data is safe at every step?"**
-Steps 2 and 3 never leave your machine until you actively send the JSON. Step 1 (Path B) does upload the PDF to Claude — that's a one-time exposure to Anthropic on your account, your call. Path A skips that entirely. The public anonymiser repo at github.com/rouxdutoit/anonymiser lets you (or anyone you trust to read the code) verify exactly what gets stripped.
+Steps 2 and 3 never leave your machine until you actively send the JSON. Step 1 depends on which path you picked: **Path A** keeps the PDF entirely on your computer. **Path B** uploads it once to Anthropic on your account (your call, one-time). **Path C** runs a model entirely offline on your computer — no third party sees anything. The public anonymiser repo at [github.com/rouxdutoit/anonymiser](https://github.com/rouxdutoit/anonymiser) lets you (or anyone you trust to read the code) verify exactly what Step 2 strips.
 
 **"What if my bank's CSV has different columns, or the columns are in a different order?"**
 
